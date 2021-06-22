@@ -1,0 +1,24 @@
+Book:
+Author: Brian Jensen
+Title: Texts from Denmark
+Publisher: Gyldendal
+Published: 2001
+
+Book:
+Author: Peter Jensen
+Author: Hans Andersen
+Title: Stories from abroad
+Publisher: Borgen
+Published: 2012
+
+Book:
+Author: Hans Andersen
+Title: Stories from Denmark
+Publisher: Gyldendal
+Published: 2017
+
+Book:
+Author: Hank Jensen
+Title: Texts from abroad
+Publisher: Borgen
+Published: 1995
