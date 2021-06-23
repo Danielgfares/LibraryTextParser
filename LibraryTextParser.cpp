@@ -12,13 +12,15 @@
 #include <algorithm>
 
 using namespace std;
-
+// mutex to control access for the threads when searching for books thats satisfy a criteria
 mutex mtx;
 
+// definition of function and global variables 
 list<struct Book> books;
 list<struct Book> ReadBooks(string input);
 list<struct Book> FindBooks(string searchString);
 
+// the given data structure with a little changes (from class to struct) 
 typedef struct Book
 {
 	list<string> authors;
@@ -27,15 +29,17 @@ typedef struct Book
 	int publicationYear = 0;
 } Book;
 
-
+/**
+* this function is the base function for the threads used to find books that satisfy the criteria
+*/
 void thRun(vector<string>& _queries, list<struct Book>& res, struct Book& book)
 {
 	bool authors = false;
 	bool match = false;
 	unsigned int i = 0;
-
+	// for every word in the criteria search in all atributes of the book
 	while (!match && i < _queries.size()) {
-
+		// first compare all names of the authors
 		list<string>::iterator it = book.authors.begin();
 		while (!authors && it != book.authors.end()) {
 			if ((*it).find(_queries[i]) != string::npos) {
@@ -43,7 +47,7 @@ void thRun(vector<string>& _queries, list<struct Book>& res, struct Book& book)
 			}
 			it++;
 		}
-
+		// then compare other atributes
 		if (book.title.find(_queries[i]) != string::npos ||
 			book.publisher.find(_queries[i]) != string::npos ||
 			to_string(book.publicationYear).find(_queries[i]) != string::npos ||
@@ -52,7 +56,7 @@ void thRun(vector<string>& _queries, list<struct Book>& res, struct Book& book)
 		}
 		i++;
 	}
-
+	// if found a match with any substring or any value. Then add the book to the list of found books
 	if (match) {
 		mtx.lock();
 		res.push_back(book);
@@ -66,17 +70,18 @@ int main()
 {
 	books = ReadBooks("Text.txt");
 	
-	for (list<struct Book>::iterator it = books.begin(); it != books.end(); it++)
-	{
-		cout << (*it).title << endl;
-		cout << (*it).publisher << endl;
-		cout << (*it).publicationYear << endl;
-		cout << (*it).authors.front() << endl;
-	}
-
 	list<struct Book> bb;
-	bb = FindBooks("*Peter*");
-
+	bb = FindBooks("*20* & *Peter*");
+	
+	for (list<struct Book>::iterator it = bb.begin(); it != bb.end(); it++)
+	{
+		cout << "Book: " << endl;
+		cout << "Title: " << (*it).title << endl;
+		cout << "Publisher: " << (*it).publisher << endl;
+		cout << "Publication Year: " << (*it).publicationYear << endl;
+		cout << "Author: " << (*it).authors.front() << endl;
+		cout << endl;
+	}
 	return 0;
 }
 
@@ -90,6 +95,7 @@ list<struct Book> ReadBooks(string input)
 	struct Book actual_book;
 	bool reading_book = false;
 
+	// open file with a input stream
 	infile.open(input, ios::in);
 	if (!infile) {
 		cout << "No such file" << endl;
@@ -97,7 +103,9 @@ list<struct Book> ReadBooks(string input)
 	
 	if (infile.is_open()) {
 		while (infile.good()) {
+			// read a line of data 
 			getline(infile, data);
+			// if empty line then finished with reading a book a now must start reading a new book reading
 			if (data.size() == 0) {
 				if (reading_book) {
 					res.push_back(actual_book);
@@ -107,9 +115,11 @@ list<struct Book> ReadBooks(string input)
 				reading_book = false;
 			}
 			else {
+				// read first word in a line 
 				stringstream ss(data);
 				getline(ss, header, ' ');
 				if (reading_book) {
+					// found to what atribute this word correspond and assign the rest of the line to this atribute 
 					if (header == "Book:") {
 						res.push_back(actual_book);
 						struct Book newBook;
@@ -156,15 +166,17 @@ list<struct Book> FindBooks(string searchString)
 	stringstream ss(searchString);
 	vector<string> queries;
 	string s;
+	// split the query string by the symbol & 
 	while (getline(ss, s, '&')) {
+		// eliminate the empty spaces
 		replace(s.begin(), s.end(), '*', ' ');
 		s.erase(remove_if(s.begin(), s.end(), isspace), s.end());
 		queries.push_back(s);
 	}
-	
+	// for every book in the program  
 	for (list<struct Book>::iterator it = books.begin(); it != books.end(); it++)
 	{
-		
+		// start a thread  
 		thread thread(&thRun, ref(queries), ref(res), ref(*it));
 		threads.push_back(move(thread));
 	}
